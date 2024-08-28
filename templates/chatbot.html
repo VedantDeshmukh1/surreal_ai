@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surreal AI Chatbot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Poppins', sans-serif;
+            background: #000;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: linear-gradient(45deg, #0a0a2e, #1e1e5b, #2a2a7f);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #chat-header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 10;
+        }
+
+        #chat-header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #f3ec78, #af4261);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            animation: subtle-pulse 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes subtle-pulse {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        #chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+            max-width: 70%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .message:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: rgba(100, 100, 255, 0.2);
+        }
+
+        #input-area {
+            display: flex;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        #input {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        #input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        #mic-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            margin-left: 15px;
+            cursor: pointer;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        #mic-button:hover {
+            transform: scale(1.05);
+        }
+
+        #mic-button.listening {
+            background: linear-gradient(45deg, #ff4b4b, #ff3333);
+            animation: pulse 1.5s infinite;
+        }
+
+        #surreal-element {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 200px;
+            opacity: 0.03;
+            pointer-events: none;
+            animation: rotate 20s linear infinite;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        @keyframes rotate {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff, 0 0 20px #ff00de, 0 0 35px #ff00de, 0 0 40px #ff00de, 0 0 50px #ff00de, 0 0 75px #ff00de;
+            }
+            to {
+                text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff, 0 0 40px #ff00de, 0 0 70px #ff00de, 0 0 80px #ff00de, 0 0 100px #ff00de, 0 0 150px #ff00de;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="chat-header">
+            <h1>Surreal AI</h1>
+        </div>
+        <div id="chat-area"></div>
+        <div id="input-area">
+            <input id="input" type="text" placeholder="Type your message here...">
+            <button id="mic-button">🎤</button>
+        </div>
+        <div id="surreal-element">∞</div>
+    </div>
+
+    <script>
+        const chatArea = document.getElementById('chat-area');
+        const input = document.getElementById('input');
+        const micButton = document.getElementById('mic-button');
+        const container = document.getElementById('container');
+
+        let isListening = false;
+        let ws;
+        let recognition;
+        let audioContext, source;
+
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8000/ws');
+            ws.onmessage = handleWebSocketMessage;
+            ws.onclose = () => {
+                console.log('WebSocket closed. Reconnecting...');
+                setTimeout(connectWebSocket, 1000);
+            };
+        }
+
+        connectWebSocket();
+
+        async function handleWebSocketMessage(event) {
+            if (event.data instanceof Blob) {
+                // Handle audio data
+                const arrayBuffer = await event.data.arrayBuffer();
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                source.start(0);
+            } else {
+                const data = JSON.parse(event.data);
+                switch (data.type) {
+                    case 'text':
+                        addMessage(data.content, 'bot');
+                        break;
+                    case 'audio_end':
+                        console.log('Audio playback complete');
+                        break;
+                    case 'info':
+                        console.log(data.content);
+                        break;
+                    case 'error':
+                        console.error(data.content);
+                        addMessage(`Error: ${data.content}`, 'bot');
+                        break;
+                }
+            }
+        }
+
+        function startAudioPlayback() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            audioSource = audioContext.createBufferSource();
+            audioBuffer = [];
+        }
+
+        function handleAudioChunk(chunk) {
+            chunk.arrayBuffer().then(arrayBuffer => {
+                audioBuffer.push(new Float32Array(arrayBuffer));
+                if (audioBuffer.length === 1) {
+                    playAudioBuffer();
+                }
+            });
+        }
+
+        function playAudioBuffer() {
+            const audioData = concatenateAudioBuffers(audioBuffer);
+            audioContext.decodeAudioData(audioData.buffer, (decodedData) => {
+                audioSource.buffer = decodedData;
+                audioSource.connect(audioContext.destination);
+                audioSource.start();
+            });
+        }
+
+        function endAudioPlayback() {
+            if (audioSource) {
+                audioSource.stop();
+            }
+            audioContext = null;
+            audioSource = null;
+            audioBuffer = [];
+        }
+
+        function concatenateAudioBuffers(buffers) {
+            const totalLength = buffers.reduce((acc, buf) => acc + buf.length, 0);
+            const result = new Float32Array(totalLength);
+            let offset = 0;
+            for (const buf of buffers) {
+                result.set(buf, offset);
+                offset += buf.length;
+            }
+            return result;
+        }
+
+        function addMessage(text, sender) {
+            const message = document.createElement('div');
+            message.classList.add('message');
+            if (sender === 'user') {
+                message.classList.add('user');
+            }
+            message.textContent = text;
+            chatArea.appendChild(message);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            message.style.animation = 'float 3s ease-in-out infinite';
+        }
+
+        function handleSendMessage() {
+            const text = input.value.trim();
+            if (text) {
+                addMessage(text, 'user');
+                input.value = '';
+                ws.send(JSON.stringify({type: 'text', content: text}));
+            }
+        }
+
+        function handleMicClick() {
+            if (!recognition) {
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    addMessage(transcript, 'user');
+                    ws.send(JSON.stringify({type: 'speech', content: transcript}));
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error', event.error);
+                };
+            }
+
+            if (isListening) {
+                recognition.stop();
+                micButton.textContent = '🎤';
+            } else {
+                recognition.start();
+                micButton.textContent = '🛑';
+            }
+            isListening = !isListening;
+        }
+
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSendMessage();
+            }
+        });
+
+        micButton.addEventListener('click', handleMicClick);
+
+        // Add floating particles
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            particle.style.width = Math.random() * 5 + 'px';
+            particle.style.height = particle.style.width;
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.top = Math.random() * 100 + '%';
+            particle.style.animation = `float ${Math.random() * 3 + 2}s ease-in-out infinite`;
+            container.appendChild(particle);
+            setTimeout(() => particle.remove(), 5000);
+        }
+
+        setInterval(createParticle, 200);
+
+        // Initial greeting
+        setTimeout(() => {
+            addMessage("Welcome to Surreal AI. Where reality bends and imagination transcends. How may I assist you in your journey through the extraordinary?", 'bot');
+        }, 1000);
+    </script>
+</body>
+</html>
