@@ -29,7 +29,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
 # Global variables
-client = AsyncClient("USERID", "KEY")
+client = AsyncClient(os.getenv('PLAY_HT_USER_ID'), os.getenv('PLAY_HT_API_KEY'))
 options = TTSOptions(
     voice="s3://voice-cloning-zero-shot/e5df2eb3-5153-40fa-9f6e-6e27bbb7a38e/original/manifest.json",
     format=api_pb2.FORMAT_WAV,
@@ -39,7 +39,7 @@ options = TTSOptions(
     voice_guidance=0.5,
     temperature=0.5
 )
-api_key = "GROQ key"
+api_key =  os.getenv('GROQ_API_KEY')
 conversation = create_conversation_chain(api_key)
 audio_manager = AudioManager()
 
@@ -65,34 +65,53 @@ async def get(request: Request):
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    print("WebSocket connection attempt")
     await websocket.accept()
+    print("WebSocket connection accepted")
     try:
         while True:
-            data = await websocket.receive_text()
-            if data.lower() == 'quit':
-                await websocket.send_json({"type": "text", "content": "Goodbye!"})
-                break
+            print("Waiting for message...")
+            data = await websocket.receive_json()
+            print(f"Received data: {data}")
+            
+            if data['type'] in ['text', 'speech']:
+                user_input = data['content']
+                print(f"User input: {user_input}")
+                if user_input.lower() == 'quit':
+                    await websocket.send_json({"type": "text", "content": "Goodbye!"})
+                    break
 
-            start_time = asyncio.get_event_loop().time()
-            try:
-                groq_response = await asyncio.to_thread(get_response, conversation, data)
-                await websocket.send_json({"type": "text", "content": groq_response})
+                start_time = asyncio.get_event_loop().time()
+                try:
+                    print("Getting Groq response...")
+                    groq_response = await asyncio.to_thread(get_response, conversation, user_input)
+                    print(f"Groq response: {groq_response}")
+                    await websocket.send_json({"type": "text", "content": groq_response})
 
-                # Convert text to speech
-                audio_data = client.tts(groq_response, options)
-                async for chunk in audio_data:
-                    await websocket.send_bytes(chunk)
-                
-                # Send a message to indicate end of audio stream
-                await websocket.send_json({"type": "audio_end"})
+                    print("Converting text to speech...")
+                    audio_data = client.tts(groq_response, options)
+                    audio_chunks = []
+                    async for chunk in audio_data:
+                        audio_chunks.append(chunk)
+                    
+                    full_audio = b''.join(audio_chunks)
+                    await websocket.send_bytes(full_audio)
+                    print(f"Sent {len(full_audio)} bytes of audio data")
 
-                end_time = asyncio.get_event_loop().time()
-                await websocket.send_json({"type": "info", "content": f"Total response time: {end_time - start_time:.2f} seconds"})
-            except Exception as e:
-                await websocket.send_json({"type": "error", "content": str(e)})
+                    await websocket.send_json({"type": "audio_end"})
+
+                    end_time = asyncio.get_event_loop().time()
+                    await websocket.send_json({"type": "info", "content": f"Total response time: {end_time - start_time:.2f} seconds"})
+                except Exception as e:
+                    print(f"Error in WebSocket endpoint: {str(e)}")
+                    await websocket.send_json({"type": "error", "content": str(e)})
+            else:
+                print(f"Unsupported message type: {data['type']}")
 
     except WebSocketDisconnect:
         print("WebSocket disconnected")
+    except Exception as e:
+        print(f"Unexpected error in WebSocket: {str(e)}")
 
 @app.websocket("/speech")
 async def speech_websocket(websocket: WebSocket):
@@ -113,24 +132,6 @@ async def speech_websocket(websocket: WebSocket):
                     break
 
                 await websocket.send_json({"type": "text", "content": f"You said: {transcript}"})
-
-                start_time = asyncio.get_event_loop().time()
-                try:
-                    groq_response = await asyncio.to_thread(get_response, conversation, transcript)
-                    await websocket.send_json({"type": "text", "content": groq_response})
-
-                    # Convert text to speech
-                    audio_data = client.tts(groq_response, options)
-                    async for chunk in audio_data:
-                        await websocket.send_bytes(chunk)
-                    
-                    # Send a message to indicate end of audio stream
-                    await websocket.send_json({"type": "audio_end"})
-
-                    end_time = asyncio.get_event_loop().time()
-                    await websocket.send_json({"type": "info", "content": f"Total response time: {end_time - start_time:.2f} seconds"})
-                except Exception as e:
-                    await websocket.send_json({"type": "error", "content": str(e)})
 
     except WebSocketDisconnect:
         print("WebSocket disconnected")

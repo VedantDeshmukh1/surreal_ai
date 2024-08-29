@@ -51,7 +51,7 @@ def play_audio(data: Generator[bytes, None, None] | Iterable[bytes]):
         audio.stop()
 
 def get_groq_response(prompt):
-    client = Groq(api_key="KEY")
+    client = Groq(api_key=os.getenv('GROQ_API_KEY'))
     
     start_time = time.time()
     chat_completion = client.chat.completions.create(

@@ -193,90 +193,67 @@
         let audioContext, source;
 
         function connectWebSocket() {
+            console.log("Attempting to connect WebSocket");
             ws = new WebSocket('ws://localhost:8000/ws');
+            
+            ws.onopen = function(event) {
+                console.log("WebSocket connection established");
+            };
+
             ws.onmessage = handleWebSocketMessage;
-            ws.onclose = () => {
-                console.log('WebSocket closed. Reconnecting...');
+
+            ws.onclose = function(event) {
+                console.log('WebSocket closed. Reason:', event.reason);
                 setTimeout(connectWebSocket, 1000);
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
             };
         }
 
         connectWebSocket();
 
         async function handleWebSocketMessage(event) {
+            console.log("Received WebSocket message", event);
             if (event.data instanceof Blob) {
-                // Handle audio data
-                const arrayBuffer = await event.data.arrayBuffer();
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                console.log("Received audio data", event.data.size);
+                try {
+                    const arrayBuffer = await event.data.arrayBuffer();
+                    if (!audioContext) {
+                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    const source = audioContext.createBufferSource();
+                    source.buffer = audioBuffer;
+                    source.connect(audioContext.destination);
+                    source.start(0);
+                } catch (error) {
+                    console.error("Error decoding audio data:", error);
                 }
-                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                source = audioContext.createBufferSource();
-                source.buffer = audioBuffer;
-                source.connect(audioContext.destination);
-                source.start(0);
             } else {
-                const data = JSON.parse(event.data);
-                switch (data.type) {
-                    case 'text':
-                        addMessage(data.content, 'bot');
-                        break;
-                    case 'audio_end':
-                        console.log('Audio playback complete');
-                        break;
-                    case 'info':
-                        console.log(data.content);
-                        break;
-                    case 'error':
-                        console.error(data.content);
-                        addMessage(`Error: ${data.content}`, 'bot');
-                        break;
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log("Received parsed message:", data);
+                    switch (data.type) {
+                        case 'text':
+                            addMessage(data.content, 'bot');
+                            break;
+                        case 'audio_end':
+                            console.log('Audio playback complete');
+                            break;
+                        case 'info':
+                            console.log(data.content);
+                            break;
+                        case 'error':
+                            console.error(data.content);
+                            addMessage(`Error: ${data.content}`, 'bot');
+                            break;
+                    }
+                } catch (error) {
+                    console.error("Error parsing WebSocket message:", error);
                 }
             }
-        }
-
-        function startAudioPlayback() {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            audioSource = audioContext.createBufferSource();
-            audioBuffer = [];
-        }
-
-        function handleAudioChunk(chunk) {
-            chunk.arrayBuffer().then(arrayBuffer => {
-                audioBuffer.push(new Float32Array(arrayBuffer));
-                if (audioBuffer.length === 1) {
-                    playAudioBuffer();
-                }
-            });
-        }
-
-        function playAudioBuffer() {
-            const audioData = concatenateAudioBuffers(audioBuffer);
-            audioContext.decodeAudioData(audioData.buffer, (decodedData) => {
-                audioSource.buffer = decodedData;
-                audioSource.connect(audioContext.destination);
-                audioSource.start();
-            });
-        }
-
-        function endAudioPlayback() {
-            if (audioSource) {
-                audioSource.stop();
-            }
-            audioContext = null;
-            audioSource = null;
-            audioBuffer = [];
-        }
-
-        function concatenateAudioBuffers(buffers) {
-            const totalLength = buffers.reduce((acc, buf) => acc + buf.length, 0);
-            const result = new Float32Array(totalLength);
-            let offset = 0;
-            for (const buf of buffers) {
-                result.set(buf, offset);
-                offset += buf.length;
-            }
-            return result;
         }
 
         function addMessage(text, sender) {
@@ -294,12 +271,24 @@
         function handleSendMessage() {
             const text = input.value.trim();
             if (text) {
-                addMessage(text, 'user');
-                input.value = '';
-                ws.send(JSON.stringify({type: 'text', content: text}));
+                sendMessage(text, 'text');
             }
         }
 
+        function handleSpeechInput(transcript) {
+            if (transcript) {
+                sendMessage(transcript, 'speech');
+            }
+        }
+
+        function sendMessage(content, type) {
+            addMessage(content, 'user');
+            input.value = '';
+            console.log(`Sending ${type} message:`, content);
+            ws.send(JSON.stringify({type: type, content: content}));
+        }
+
+        // Update the speech recognition code
         function handleMicClick() {
             if (!recognition) {
                 recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
@@ -309,8 +298,7 @@
 
                 recognition.onresult = function(event) {
                     const transcript = event.results[0][0].transcript;
-                    addMessage(transcript, 'user');
-                    ws.send(JSON.stringify({type: 'speech', content: transcript}));
+                    handleSpeechInput(transcript);
                 };
 
                 recognition.onerror = function(event) {
