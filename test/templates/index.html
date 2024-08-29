@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Auth</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-96">
+        <h1 class="text-2xl font-bold mb-6 text-center" id="formTitle">Login</h1>
+        <form id="authForm" class="space-y-4">
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" id="email" name="email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" id="password" name="password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+            </div>
+            <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Submit
+            </button>
+        </form>
+        <p class="mt-4 text-center text-sm">
+            <a href="#" id="switchForm" class="font-medium text-indigo-600 hover:text-indigo-500">
+                Switch to Signup
+            </a>
+        </p>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let isLogin = true;
+
+        const authForm = document.getElementById('authForm');
+        const formTitle = document.getElementById('formTitle');
+        const switchFormLink = document.getElementById('switchForm');
+
+        switchFormLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            isLogin = !isLogin;
+            formTitle.textContent = isLogin ? 'Login' : 'Signup';
+            switchFormLink.textContent = isLogin ? 'Switch to Signup' : 'Switch to Login';
+        });
+
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/${isLogin ? 'login' : 'signup'}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (isLogin) {
+                        localStorage.setItem('token', data.token);
+                        alert('Login successful!');
+                        // Redirect to protected route or dashboard
+                        testProtectedRoute();
+                    } else {
+                        alert('Signup successful! Please log in.');
+                        isLogin = true;
+                        formTitle.textContent = 'Login';
+                        switchFormLink.textContent = 'Switch to Signup';
+                    }
+                } else {
+                    throw new Error(data.detail);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        });
+
+        async function testProtectedRoute() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_URL}/protected`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`Protected route accessed successfully. User ID: ${data.user_id}`);
+                } else {
+                    throw new Error('Failed to access protected route');
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>
