@@ -190,7 +190,8 @@
         let isListening = false;
         let ws;
         let recognition;
-        let audioContext, source;
+        let audioContext, source, audioQueue = [];
+        let isPlayingAudio = false;
 
         function connectWebSocket() {
             console.log("Attempting to connect WebSocket");
@@ -217,19 +218,11 @@
         async function handleWebSocketMessage(event) {
             console.log("Received WebSocket message", event);
             if (event.data instanceof Blob) {
-                console.log("Received audio data", event.data.size);
-                try {
-                    const arrayBuffer = await event.data.arrayBuffer();
-                    if (!audioContext) {
-                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    }
-                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                    const source = audioContext.createBufferSource();
-                    source.buffer = audioBuffer;
-                    source.connect(audioContext.destination);
-                    source.start(0);
-                } catch (error) {
-                    console.error("Error decoding audio data:", error);
+                console.log("Received audio chunk", event.data.size);
+                const arrayBuffer = await event.data.arrayBuffer();
+                audioQueue.push(arrayBuffer);
+                if (!isPlayingAudio) {
+                    playNextAudioChunk();
                 }
             } else {
                 try {
@@ -253,6 +246,32 @@
                 } catch (error) {
                     console.error("Error parsing WebSocket message:", error);
                 }
+            }
+        }
+
+        async function playNextAudioChunk() {
+            if (audioQueue.length === 0) {
+                isPlayingAudio = false;
+                return;
+            }
+
+            isPlayingAudio = true;
+            const arrayBuffer = audioQueue.shift();
+
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            try {
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                source.onended = playNextAudioChunk;
+                source.start(0);
+            } catch (error) {
+                console.error("Error decoding audio data:", error);
+                playNextAudioChunk();
             }
         }
 

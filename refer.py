@@ -13,6 +13,7 @@ from pyht import TTSOptions
 import simpleaudio as sa
 import websockets
 import json
+from contextual_memory import create_conversation_chain, get_response
 
 from pyht.async_client import AsyncClient
 from pyht.protos import api_pb2
@@ -169,6 +170,7 @@ async def async_get_speech_input():
                 pass
 
     return transcript
+
 async def async_play_audio(data: AsyncGenerator[bytes, None] | AsyncIterable[bytes]):
     buffer = np.array([], dtype=np.int16)
     start_time = time.time()
@@ -184,15 +186,16 @@ async def async_play_audio(data: AsyncGenerator[bytes, None] | AsyncIterable[byt
         chunk_array = np.frombuffer(chunk, dtype=np.int16)
         buffer = np.append(buffer, chunk_array)
         total_samples += len(chunk_array)
-        print(f"Received chunk of size: {len(chunk_array)} samples")
 
-        if len(buffer) >= 7200:  # Start playing after accumulating 0.2 seconds of audio
+        if len(buffer) >= 3600:  # Start playing after accumulating 0.15 seconds of audio
             if stream is None:
                 stream = sd.OutputStream(samplerate=24000, channels=1, dtype=np.int16)
                 stream.start()
             
             stream.write(buffer)
             buffer = np.array([], dtype=np.int16)
+
+        yield chunk  # Yield each chunk as it's received
 
     # Play any remaining audio
     if len(buffer) > 0 and stream is not None:
@@ -221,12 +224,10 @@ async def initialize_apis(client, options):
 
     print(f"APIs initialized in {time.time() - start_time:.2f} seconds")
 
-from contextual_memory import create_conversation_chain, get_response
-
 async def main():
     # Load values from environment variables
-    user = "KEY"
-    key = "KEY"
+    user = os.getenv('PLAY_HT_USER_ID')
+    key = os.getenv('PLAY_HT_API_KEY')
     voice = "s3://voice-cloning-zero-shot/e5df2eb3-5153-40fa-9f6e-6e27bbb7a38e/original/manifest.json"
     quality = "standard"
     interactive = True

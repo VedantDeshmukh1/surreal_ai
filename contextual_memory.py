@@ -15,7 +15,7 @@ def create_conversation_chain(api_key, model_name="llama3-8b-8192", memory_lengt
         model_name=model_name
     )
 
-    system_prompt = 'You are an AI-powered virtual interviewer. Conduct the interview professionally and analyze the candidate\'s responses.'
+    system_prompt = 'You are a helpful assistant. Provide concise responses without any formatting.'
     memory = ConversationBufferWindowMemory(k=memory_length, memory_key="chat_history", return_messages=True)
 
     prompt = ChatPromptTemplate.from_messages([
