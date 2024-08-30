@@ -15,9 +15,9 @@
             height: 100vh;
             width: 100%;
             display: flex;
-            justify-content: flex-end;
+            justify-content: flex-end; /* Align content to the right */
             align-items: center;
-            background-image: url('Robot.png');
+            background-image: url('/static/Robot.png');
             background-size: cover;
             background-position: center;
             position: relative;
@@ -45,10 +45,10 @@
         }
         .container {
             max-width: 450px;
-            width: 100%;
-            margin-right: 5%;
+            width: 90%; /* Adjust width for smaller screens */
+            margin-right: 5%; /* Add right margin */
             padding: 40px;
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(20px);
             border-radius: 30px;
             box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
@@ -57,57 +57,57 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
             min-height: 70vh;
         }
         h1 {
             font-size: 42px;
             font-weight: bold;
-            color: #fff;
+            color: #333333;
             text-align: center;
             margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.3);
         }
         p {
             font-size: 22px;
-            color: #fff;
+            color: #444444;
             text-align: center;
             margin-bottom: 40px;
             line-height: 1.6;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.2);
         }
         form {
-            margin-bottom: 30px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        label {
-            display: block;
-            color: #fff;
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 12px;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        .input-group {
+            width: 100%;
+            max-width: 350px;
+            margin-bottom: 25px;
         }
         input {
             width: 100%;
             padding: 16px 20px;
             font-size: 18px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(0, 0, 0, 0.2);
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.8);
+            color: #333333;
             transition: all 0.3s ease;
         }
         input:focus {
             outline: none;
-            border-color: rgba(255, 255, 255, 0.5);
-            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(0, 0, 0, 0.4);
+            background: rgba(255, 255, 255, 0.9);
         }
         input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(0, 0, 0, 0.5);
         }
         button {
-            background-color: #f4511e;
-            color: white;
+            background-color: #ff6b35;
+            color: #ffffff;
             font-weight: bold;
             padding: 16px 24px;
             border: none;
@@ -115,23 +115,24 @@
             cursor: pointer;
             font-size: 20px;
             width: 100%;
+            max-width: 350px;
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         button:hover {
-            background-color: #e64a19;
+            background-color: #ff8c61;
             transform: translateY(-2px);
             box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
         }
         .thank-you {
             font-size: 24px;
-            color: #fff;
+            color: #333333;
             text-align: center;
             margin-top: 30px;
             display: none;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.2);
         }
     </style>
 </head>
@@ -140,10 +141,11 @@
         <div class="container">
             <h1>Surreal AI</h1>
             <p>Experience the future of interviews with our real-time AI chatbot that thinks and responds instantly.</p>
-            <form id="emailForm">
-                <label for="email">Join the Waitlist</label>
-                <input type="email" id="email" placeholder="Enter your email address" required>
-                <button type="submit">Get Early Access</button>
+            <form action="/submit-email" method="post">
+                <div class="input-group">
+                    <input type="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <button type="submit">Join Waitlist</button>
             </form>
             <p class="thank-you" id="thankYouMessage">Thank you for your interest! We'll be in touch soon with exclusive updates.</p>
         </div>

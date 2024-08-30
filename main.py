@@ -1,5 +1,5 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Form, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -17,16 +17,22 @@ from refer import (
     initialize_apis
 )
 from contextual_memory import create_conversation_chain, get_response
+from supabase import create_client, Client
 
 load_dotenv()
 
 app = FastAPI()
 
 # Mount static files
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Setup Jinja2 templates
 templates = Jinja2Templates(directory="templates")
+
+# Supabase setup
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # Global variables
 client = AsyncClient(os.getenv('PLAY_HT_USER_ID'), os.getenv('PLAY_HT_API_KEY'))
@@ -55,12 +61,31 @@ async def shutdown_event():
     try:
         await client.close()
     except AttributeError:
-        # If _stop_lease_loop doesn't exist, we can't stop it, so we'll just pass
         pass
     audio_manager.terminate()
 
 @app.get("/", response_class=HTMLResponse)
 async def get(request: Request):
+    return templates.TemplateResponse("landing.html", {"request": request})
+
+@app.post("/submit-email")
+async def submit_email(request: Request, email: str = Form(...)):
+    try:
+        # Insert email into Supabase table
+        response = supabase.table("surreal_users").insert({"email": str(email)}).execute()
+        
+        if response.data:
+            print(f"Email inserted successfully: {email}")
+            return RedirectResponse(url="/chat", status_code=303)
+        else:
+            print(f"Failed to insert email: {email}")
+            raise HTTPException(status_code=500, detail="Failed to submit email")
+    except Exception as e:
+        print(f"Error inserting email: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to submit email: {str(e)}")
+
+@app.get("/chat", response_class=HTMLResponse)
+async def chat(request: Request):
     return templates.TemplateResponse("chatbot.html", {"request": request})
 
 @app.websocket("/ws")
