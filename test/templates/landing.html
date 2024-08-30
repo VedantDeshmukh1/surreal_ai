@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surreal AI - Your Virtual Interviewer</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        #app {
+            height: 100vh;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 1s ease;
+        }
+        .container {
+            max-width: 400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        p {
+            font-size: 18px;
+            color: #666;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        form {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            color: #333;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        input {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+        }
+        button {
+            background-color: #f4511e;
+            color: white;
+            font-weight: bold;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #e64a19;
+        }
+        .thank-you {
+            font-size: 18px;
+            color: #666;
+            text-align: center;
+            margin-top: 16px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <h1>Surreal AI - Your Virtual Interviewer</h1>
+            <p>Get instant feedback on your interview skills with our AI-powered virtual interviewer.</p>
+            <form id="emailForm">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="your@email.com" required>
+                <button type="submit">Get Started</button>
+            </form>
+            <p class="thank-you" id="thankYouMessage">Thank you for your interest! We will be in touch soon.</p>
+        </div>
+    </div>
+
+    <script>
+        const app = document.getElementById('app');
+        const form = document.getElementById('emailForm');
+        const thankYouMessage = document.getElementById('thankYouMessage');
+        const bgGradients = [
+            'linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%)',
+            'linear-gradient(120deg, #f6d365 0%, #fda085 100%)',
+            'linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)',
+        ];
+        let bgIndex = 0;
+
+        function changeBgGradient() {
+            bgIndex = (bgIndex + 1) % bgGradients.length;
+            app.style.background = bgGradients[bgIndex];
+        }
+
+        setInterval(changeBgGradient, 3000);
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            form.style.display = 'none';
+            thankYouMessage.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
