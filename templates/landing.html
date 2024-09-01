@@ -10,6 +10,7 @@
             padding: 0;
             height: 100%;
             font-family: Arial, sans-serif;
+            
         }
         #app {
             height: 100vh;
@@ -271,6 +272,146 @@
             border-radius: 20px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
         }
+
+        .credits, .technical-section {
+            padding: 60px 40px;
+            margin-top: 40px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 36px;
+            color: #ff6b35;
+            margin-bottom: 30px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .section-intro, .section-outro {
+            font-size: 20px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .interaction-methods {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .interaction-method {
+            flex: 1;
+            min-width: 250px;
+            padding: 30px;
+            background: linear-gradient(135deg, #ff6b35, #ff8c61);
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+            color: #fff;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .interaction-method:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(255, 107, 53, 0.4);
+        }
+
+        .interaction-method h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .interaction-method p {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .feature {
+            padding: 30px;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: center;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 40px;
+            color: #ff6b35;
+            margin-bottom: 15px;
+        }
+
+        .feature h3 {
+            font-size: 22px;
+            color: #444;
+            margin-bottom: 15px;
+        }
+
+        .feature p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .diagram-container {
+            margin-top: 60px;
+            text-align: center;
+        }
+
+        .technical-diagram {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .technical-diagram:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .credits, .technical-section {
+                padding: 40px 20px;
+            }
+
+            .section-title {
+                font-size: 28px;
+            }
+
+            .section-intro, .section-outro {
+                font-size: 18px;
+            }
+
+            .interaction-method h3 {
+                font-size: 22px;
+            }
+
+            .feature h3 {
+                font-size: 20px;
+            }
+
+            .feature p {
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -308,49 +449,69 @@
         <div class="scroll-text">Scroll down to learn how to use this</div>
         <div class="arrow">↓</div>
     </div>
-    <div class="credits">
-        <h2>How to Use the Chatbot</h2>
-        <p>Welcome to Surreal AI! Here's how you can interact with our chatbot:</p>
-        <h3>Text Interaction</h3>
-        <ul>
-            <li>Navigate to the chat page by clicking the "Join Waitlist" button and submitting your email.</li>
-            <li>On the chat page, type your queries into the text input box and press Enter.</li>
-            <li>The chatbot will respond with a text message.</li>
-            <li>If you want to end the conversation, type "quit".</li>
-        </ul>
-        <h3>Speech Interaction</h3>
-        <ul>
-            <li>Navigate to the chat page by clicking the "Join Waitlist" button and submitting your email.</li>
-            <li>On the chat page, click the microphone button to start the speech interaction.</li>
-            <li>Speak your question clearly into the microphone.</li>
-            <li>The chatbot will transcribe your speech and respond with a text message.</li>
-            <li>The chatbot will also convert its response to speech and play it back to you.</li>
-            <li>If you want to end the conversation, say "quit".</li>
-        </ul>
-        <p>Enjoy your conversation with Surreal AI!</p>
+    <div class="credits" data-aos="fade-up">
+        <h2 class="section-title">Interact with Surreal AI</h2>
+        <p class="section-intro">Discover two exciting ways to engage with our cutting-edge chatbot:</p>
+        
+        <div class="interaction-methods">
+            <div class="interaction-method" data-aos="flip-left">
+                <h3><i class="fas fa-keyboard"></i> Text Chat</h3>
+                <p>Type your queries and receive instant text responses. It's that simple!</p>
+            </div>
+            
+            <div class="interaction-method" data-aos="flip-right">
+                <h3><i class="fas fa-microphone"></i> Voice Interaction</h3>
+                <p>Speak naturally and hear AI-generated responses. Experience conversation reimagined!</p>
+            </div>
+        </div>
+        
+        <p class="section-outro" data-aos="fade-up">Ready to start? Join our waitlist and be among the first to chat with the future!</p>
     </div>
-    <div class="technical-section">
-        <h2>Reducing Latency through Asynchronous Processing in Speech-to-Speech Systems</h2>
-        <p>Our innovative speech-to-speech system utilizes an asynchronous architecture to significantly reduce latency and improve user experience. Here's how our system outperforms traditional synchronous approaches:</p>
-        <h3>Parallel Processing:</h3>
-        <p>In our asynchronous system, the three main components - Speech-to-Text, Language Model (LLM), and Text-to-Speech - operate concurrently. This parallel processing allows for a substantial reduction in overall latency compared to sequential execution.</p>
-        <h3>Early Start Advantage:</h3>
-        <p>The LLM begins processing as soon as the first chunks of transcribed text are available, rather than waiting for the entire speech input to be transcribed. This head start significantly reduces waiting time.</p>
-        <h3>Continuous Output Generation:</h3>
-        <p>Our Text-to-Speech module starts generating audio output as soon as it receives the initial responses from the LLM. This means users can hear the beginning of the response while the system is still processing the latter parts of the input.</p>
-        <h3>Efficient Resource Utilization:</h3>
-        <p>By allowing all components to work simultaneously, we ensure that computational resources are used efficiently, with no idle time between processes.</p>
-        <h3>Scalability:</h3>
-        <p>The asynchronous architecture allows for easy scaling. We can process multiple requests concurrently, improving the system's overall throughput.</p>
-        <h3>Reduced End-to-End Latency:</h3>
-        <p>In practical terms, our asynchronous system can deliver responses up to 40% faster than traditional synchronous systems, depending on the input complexity and length.</p>
-        <h3>Improved User Experience:</h3>
-        <p>The faster response times and the ability to start hearing outputs earlier create a more natural, conversational feel for the user, closely mimicking human-to-human interactions.</p>
-        <h3>Adaptive Processing:</h3>
-        <p>Our system can dynamically adjust processing based on the incoming data stream, optimizing performance in real-time for various speech patterns and lengths.</p>
-        <p>By leveraging this asynchronous architecture, we've created a speech-to-speech system that not only reduces latency but also provides a more responsive and engaging user experience. This approach represents a significant step forward in making AI-driven conversations feel more natural and instantaneous.</p>
-        <img src="static/expanded-speech-processing-flow.svg" alt="Technical Architecture Diagram">
+    <div class="technical-section" data-aos="fade-up">
+        <h2 class="section-title">Lightning-Fast AI Conversations</h2>
+        <p class="section-intro">Our revolutionary asynchronous system breaks the speed barrier. Here's how:</p>
+        
+        <div class="feature-grid">
+            <div class="feature" data-aos="zoom-in-up">
+                <i class="fas fa-bolt feature-icon"></i>
+                <h3>Parallel Processing</h3>
+                <p>Multiple AI components work simultaneously, slashing response times.</p>
+            </div>
+            <div class="feature" data-aos="zoom-in-up" data-aos-delay="100">
+                <i class="fas fa-stopwatch feature-icon"></i>
+                <h3>Early Start Advantage</h3>
+                <p>Processing begins instantly, no waiting for complete input.</p>
+            </div>
+            <div class="feature" data-aos="zoom-in-up" data-aos-delay="200">
+                <i class="fas fa-stream feature-icon"></i>
+                <h3>Continuous Output</h3>
+                <p>Hear responses as they're generated, just like a real conversation.</p>
+            </div>
+            <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                <i class="fas fa-tachometer-alt feature-icon"></i>
+                <h3>40% Faster</h3>
+                <p>Experience AI responses up to 40% quicker than traditional systems.</p>
+            </div>
+        </div>
+        
+        <p class="section-outro" data-aos="fade-up">Surreal AI: Where instant thoughts meet instant responses.</p>
+        
+        <div class="diagram-container" data-aos="zoom-in">
+            <img src="static/expanded-speech-processing-flow.svg" alt="Surreal AI's Asynchronous System" class="technical-diagram">
+        </div>
     </div>
+
+    <!-- Add this before the closing </body> tag -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 800,
+            once: true,
+            offset: 100
+        });
+    </script>
     <script>
         const app = document.getElementById('app');
         const form = document.getElementById('emailForm');
