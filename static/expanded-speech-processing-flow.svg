@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <rect width="800" height="500" fill="white"/>
+  
+  <!-- Synchronous Flow -->
+  <rect x="50" y="50" width="700" height="120" fill="#FFF8DC" stroke="#000" stroke-width="2"/>
+  <text x="400" y="80" text-anchor="middle" font-size="24" fill="#FF8C00">Synchronous</text>
+  
+  <rect x="70" y="100" width="200" height="50" fill="#ADD8E6" stroke="#000"/>
+  <rect x="270" y="100" width="200" height="50" fill="#FFB6C1" stroke="#000"/>
+  <rect x="470" y="100" width="200" height="50" fill="#98FB98" stroke="#000"/>
+  
+  <text x="170" y="130" text-anchor="middle">Speech to Text</text>
+  <text x="370" y="130" text-anchor="middle">LLM Processing</text>
+  <text x="570" y="130" text-anchor="middle">Text to Speech</text>
+  
+  <!-- Asynchronous Flow -->
+  <rect x="50" y="200" width="700" height="240" fill="#F0FFF0" stroke="#000" stroke-width="2"/>
+  <text x="400" y="230" text-anchor="middle" font-size="24" fill="#228B22">Asynchronous</text>
+  
+  <rect x="70" y="260" width="300" height="50" fill="#ADD8E6" stroke="#000"/>
+  <rect x="100" y="320" width="300" height="50" fill="#FFB6C1" stroke="#000"/>
+  <rect x="130" y="380" width="300" height="50" fill="#98FB98" stroke="#000"/>
+  
+  <text x="220" y="290" text-anchor="middle">Speech to Text</text>
+  <text x="250" y="350" text-anchor="middle">LLM Processing</text>
+  <text x="280" y="410" text-anchor="middle">Text to Speech</text>
+  
+  <!-- Time Arrow -->
+  <line x1="50" y1="470" x2="750" y2="470" stroke="red" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="400" y="490" text-anchor="middle" font-size="16" fill="red">Time</text>
+  
+  <!-- Arrowhead definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="red"/>
+    </marker>
+  </defs>
+</svg>

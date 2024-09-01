@@ -44,10 +44,10 @@
             transition: opacity 2s ease;
         }
         .container {
-            max-width: 450px;
-            width: 90%; /* Adjust width for smaller screens */
+            max-width: 400px; /* Reduced width */
+            width: 80%; /* Adjust width for smaller screens */
             margin-right: 5%; /* Add right margin */
-            padding: 40px;
+            padding: 30px; /* Reduced padding */
             background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(20px);
             border-radius: 30px;
@@ -58,10 +58,11 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 70vh;
+            min-height: 60vh; /* Reduced height */
+            overflow: hidden; /* Ensure content does not overflow */
         }
         h1 {
-            font-size: 42px;
+            font-size: 48px; /* Increased font size */
             font-weight: bold;
             color: #333333;
             text-align: center;
@@ -69,10 +70,10 @@
             text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.3);
         }
         p {
-            font-size: 22px;
+            font-size: 20px; /* Reduced font size */
             color: #444444;
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px; /* Reduced margin */
             line-height: 1.6;
             text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.2);
         }
@@ -84,13 +85,13 @@
         }
         .input-group {
             width: 100%;
-            max-width: 350px;
-            margin-bottom: 25px;
+            max-width: 300px; /* Reduced max-width */
+            margin-bottom: 20px; /* Reduced margin */
         }
         input {
             width: 100%;
-            padding: 16px 20px;
-            font-size: 18px;
+            padding: 14px 18px; /* Reduced padding */
+            font-size: 16px; /* Reduced font size */
             border: 2px solid rgba(0, 0, 0, 0.2);
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.8);
@@ -109,13 +110,13 @@
             background-color: #ff6b35;
             color: #ffffff;
             font-weight: bold;
-            padding: 16px 24px;
+            padding: 14px 22px; /* Reduced padding */
             border: none;
             border-radius: 12px;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 18px; /* Reduced font size */
             width: 100%;
-            max-width: 350px;
+            max-width: 300px; /* Reduced max-width */
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -127,12 +128,148 @@
             box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
         }
         .thank-you {
-            font-size: 24px;
+            font-size: 22px; /* Reduced font size */
             color: #333333;
             text-align: center;
-            margin-top: 30px;
+            margin-top: 20px; /* Reduced margin */
             display: none;
             text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.2);
+        }
+        .scroll-text {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 18px;
+            color: #ffffff;
+            text-align: center;
+        }
+        .arrow {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: #ffffff;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .credits {
+            width: 100%;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .credits h2 {
+            font-size: 28px;
+            color: #333333;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.2);
+        }
+
+        .credits p {
+            font-size: 18px;
+            color: #444444;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.2);
+        }
+
+        .credits h3 {
+            font-size: 24px;
+            color: #333333;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.2);
+        }
+
+        .credits ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .credits li {
+            font-size: 18px;
+            color: #444444;
+            margin-bottom: 10px;
+            line-height: 1.6;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.2);
+        }
+
+        .credits li::before {
+            content: "•";
+            color: #ff6b35;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+            margin: 0 5px;
+            vertical-align: middle;
+        }
+
+        .developer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .developer p {
+            margin: 0 10px 0 0;
+        }
+
+        .technical-section {
+            margin-top: 40px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+        }
+
+        .technical-section h2 {
+            font-size: 28px;
+            color: #333333;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.2);
+        }
+
+        .technical-section p {
+            font-size: 18px;
+            color: #444444;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.2);
+        }
+
+        .technical-section img {
+            width: 100%;
+            max-width: 600px;
+            display: block;
+            margin: 0 auto;
+            border-radius: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
@@ -148,9 +285,72 @@
                 <button type="submit">Join Waitlist</button>
             </form>
             <p class="thank-you" id="thankYouMessage">Thank you for your interest! We'll be in touch soon with exclusive updates.</p>
+            <h2>Credits</h2>
+            <div class="developer">
+                <p>Vedant Deshmukh</p>
+                <a href="https://github.com/VedantDeshmukh1" target="_blank">
+                    <img src="/static/github-icon.png" alt="GitHub" class="icon">
+                </a>
+                <a href="https://www.linkedin.com/in/vedant-deshmukh-173607264/" target="_blank">
+                    <img src="/static/linkedin-icon.png" alt="LinkedIn" class="icon">
+                </a>
+            </div>
+            <div class="developer">
+                <p>Kanishk Arya</p>
+                <a href="https://github.com/Parzival7566" target="_blank">
+                    <img src="/static/github-icon.png" alt="GitHub" class="icon">
+                </a>
+                <a href="https://www.linkedin.com/in/kan-arya/" target="_blank">
+                    <img src="/static/linkedin-icon.png" alt="LinkedIn" class="icon">
+                </a>
+            </div>
         </div>
+        <div class="scroll-text">Scroll down to learn how to use this</div>
+        <div class="arrow">↓</div>
     </div>
-
+    <div class="credits">
+        <h2>How to Use the Chatbot</h2>
+        <p>Welcome to Surreal AI! Here's how you can interact with our chatbot:</p>
+        <h3>Text Interaction</h3>
+        <ul>
+            <li>Navigate to the chat page by clicking the "Join Waitlist" button and submitting your email.</li>
+            <li>On the chat page, type your queries into the text input box and press Enter.</li>
+            <li>The chatbot will respond with a text message.</li>
+            <li>If you want to end the conversation, type "quit".</li>
+        </ul>
+        <h3>Speech Interaction</h3>
+        <ul>
+            <li>Navigate to the chat page by clicking the "Join Waitlist" button and submitting your email.</li>
+            <li>On the chat page, click the microphone button to start the speech interaction.</li>
+            <li>Speak your question clearly into the microphone.</li>
+            <li>The chatbot will transcribe your speech and respond with a text message.</li>
+            <li>The chatbot will also convert its response to speech and play it back to you.</li>
+            <li>If you want to end the conversation, say "quit".</li>
+        </ul>
+        <p>Enjoy your conversation with Surreal AI!</p>
+    </div>
+    <div class="technical-section">
+        <h2>Reducing Latency through Asynchronous Processing in Speech-to-Speech Systems</h2>
+        <p>Our innovative speech-to-speech system utilizes an asynchronous architecture to significantly reduce latency and improve user experience. Here's how our system outperforms traditional synchronous approaches:</p>
+        <h3>Parallel Processing:</h3>
+        <p>In our asynchronous system, the three main components - Speech-to-Text, Language Model (LLM), and Text-to-Speech - operate concurrently. This parallel processing allows for a substantial reduction in overall latency compared to sequential execution.</p>
+        <h3>Early Start Advantage:</h3>
+        <p>The LLM begins processing as soon as the first chunks of transcribed text are available, rather than waiting for the entire speech input to be transcribed. This head start significantly reduces waiting time.</p>
+        <h3>Continuous Output Generation:</h3>
+        <p>Our Text-to-Speech module starts generating audio output as soon as it receives the initial responses from the LLM. This means users can hear the beginning of the response while the system is still processing the latter parts of the input.</p>
+        <h3>Efficient Resource Utilization:</h3>
+        <p>By allowing all components to work simultaneously, we ensure that computational resources are used efficiently, with no idle time between processes.</p>
+        <h3>Scalability:</h3>
+        <p>The asynchronous architecture allows for easy scaling. We can process multiple requests concurrently, improving the system's overall throughput.</p>
+        <h3>Reduced End-to-End Latency:</h3>
+        <p>In practical terms, our asynchronous system can deliver responses up to 40% faster than traditional synchronous systems, depending on the input complexity and length.</p>
+        <h3>Improved User Experience:</h3>
+        <p>The faster response times and the ability to start hearing outputs earlier create a more natural, conversational feel for the user, closely mimicking human-to-human interactions.</p>
+        <h3>Adaptive Processing:</h3>
+        <p>Our system can dynamically adjust processing based on the incoming data stream, optimizing performance in real-time for various speech patterns and lengths.</p>
+        <p>By leveraging this asynchronous architecture, we've created a speech-to-speech system that not only reduces latency but also provides a more responsive and engaging user experience. This approach represents a significant step forward in making AI-driven conversations feel more natural and instantaneous.</p>
+        <img src="static/expanded-speech-processing-flow.svg" alt="Technical Architecture Diagram">
+    </div>
     <script>
         const app = document.getElementById('app');
         const form = document.getElementById('emailForm');
