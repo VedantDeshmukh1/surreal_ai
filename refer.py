@@ -2,7 +2,6 @@ import asyncio
 import os
 import numpy as np
 import sounddevice as sd
-import simpleaudio as sa
 import websockets
 import json
 from pyht import TTSOptions
@@ -19,28 +18,9 @@ load_dotenv()
 # === SYNC EXAMPLE ===
 
 def play_audio(data):
-    buff_size = 5242880
-    ptr = 0
-    start_time = time.time()
-    buffer = np.empty(buff_size, np.float16)
-    audio = None
-    for i, chunk in enumerate(data):
-        if i == 0:
-            start_time = time.time()
-            continue  # Drop the first response, we don't want a header.
-        elif i == 1:
-            print("First audio byte received in:", time.time() - start_time)
-        for sample in np.frombuffer(chunk, np.float16):
-            buffer[ptr] = sample
-            ptr += 1
-        if i == 5:
-            # Give a 4 sample worth of breathing room before starting
-            # playback
-            audio = sa.play_buffer(buffer, 1, 2, 24000)
-    approx_run_time = ptr / 24_000
-    time.sleep(max(approx_run_time - time.time() + start_time, 0))
-    if audio is not None:
-        audio.stop()
+    buffer = np.frombuffer(data, dtype=np.float16)
+    sd.play(buffer, samplerate=24000, channels=1, dtype='float16')
+    sd.wait()
 
 def get_groq_response(prompt):
     client = Groq(api_key=os.getenv('GROQ_API_KEY'))

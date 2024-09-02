@@ -122,7 +122,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     print("Converting text to speech...")
                     audio_data = client.tts(groq_response, options)
                     
+                    first_audio_byte_time = None
                     async for chunk in async_play_audio(audio_data):
+                        if first_audio_byte_time is None:
+                            first_audio_byte_time = asyncio.get_event_loop().time()
+                            latency = first_audio_byte_time - start_time
+                            await websocket.send_json({"type": "info", "content": f"Latency: {latency:.2f} seconds"})
                         await websocket.send_bytes(chunk)
                     
                     await websocket.send_json({"type": "audio_end"})

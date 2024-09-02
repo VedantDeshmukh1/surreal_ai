@@ -9,7 +9,6 @@ langchain-core
 langchain-groq
 numpy
 sounddevice
-simpleaudio
 websockets
 pyht
 groq
