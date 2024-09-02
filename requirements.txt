@@ -7,7 +7,6 @@ supabase
 langchain
 langchain-core
 langchain-groq
-pyaudio
 numpy
 sounddevice
 simpleaudio

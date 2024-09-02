@@ -1,33 +1,24 @@
-from __future__ import annotations
-import select
-import sys
-from typing import AsyncGenerator, AsyncIterable, Generator, Iterable, Literal
 import asyncio
-import time
 import os
-os.environ['GRPC_ENABLE_FORK_SUPPORT'] = '0'
-import pyaudio
 import numpy as np
 import sounddevice as sd
-from pyht import TTSOptions
 import simpleaudio as sa
 import websockets
 import json
+from pyht import TTSOptions
 from contextual_memory import create_conversation_chain, get_response
-
 from pyht.async_client import AsyncClient
 from pyht.protos import api_pb2
-
 from groq import Groq
 from dotenv import load_dotenv
+import time
 
 # Load environment variables
 load_dotenv()
 
 # === SYNC EXAMPLE ===
 
-
-def play_audio(data: Generator[bytes, None, None] | Iterable[bytes]):
+def play_audio(data):
     buff_size = 5242880
     ptr = 0
     start_time = time.time()
@@ -76,7 +67,6 @@ def get_groq_response(prompt):
     print(f"Groq Latency: {latency:.2f} seconds")
     return response
 
-
 async def initialize_apis(client, options):
     print("Initializing APIs...")
     start_time = time.time()
@@ -92,30 +82,24 @@ async def initialize_apis(client, options):
 
     print(f"APIs initialized in {time.time() - start_time:.2f} seconds")
 
-
 class AudioManager:
     def __init__(self):
-        self.p = pyaudio.PyAudio()
         self.input_stream = None
 
     def create_input_stream(self):
         if self.input_stream is None:
-            self.input_stream = self.p.open(format=pyaudio.paInt16,
-                                            channels=1,
-                                            rate=16000,
-                                            input=True,
-                                            frames_per_buffer=1024)
+            self.input_stream = sd.InputStream(samplerate=16000, channels=1, dtype='int16')
+            self.input_stream.start()
         return self.input_stream
 
     def close_streams(self):
         if self.input_stream:
-            self.input_stream.stop_stream()
+            self.input_stream.stop()
             self.input_stream.close()
             self.input_stream = None
 
     def terminate(self):
         self.close_streams()
-        self.p.terminate()
 
 audio_manager = AudioManager()
 
@@ -136,8 +120,8 @@ async def async_get_speech_input():
             try:
                 while True:
                     try:
-                        data = await asyncio.to_thread(stream.read, 1024, exception_on_overflow=False)
-                        await ws.send(data)
+                        data, _ = stream.read(1024)
+                        await ws.send(data.tobytes())
                     except OSError as e:
                         print(f"Error reading from audio stream: {e}")
                         break
@@ -171,7 +155,7 @@ async def async_get_speech_input():
 
     return transcript
 
-async def async_play_audio(data: AsyncGenerator[bytes, None] | AsyncIterable[bytes]):
+async def async_play_audio(data):
     buffer = np.array([], dtype=np.int16)
     start_time = time.time()
     stream = None
@@ -208,21 +192,6 @@ async def async_play_audio(data: AsyncGenerator[bytes, None] | AsyncIterable[byt
     print(f"Total audio samples: {total_samples}")
     print(f"Audio duration: {total_samples / 24000:.2f} seconds")
     print("Audio playback completed")
-
-async def initialize_apis(client, options):
-    print("Initializing APIs...")
-    start_time = time.time()
-
-    # Initialize Groq
-    dummy_prompt = "Hello"
-    await asyncio.to_thread(get_groq_response, dummy_prompt)
-
-    # Initialize PlayHT
-    dummy_text = "Initialization complete"
-    async for _ in client.tts(dummy_text, options):
-        pass  # We just need to iterate through the generator
-
-    print(f"APIs initialized in {time.time() - start_time:.2f} seconds")
 
 async def main():
     # Load values from environment variables
@@ -283,14 +252,12 @@ async def main():
         try:
             await client.close()
         except AttributeError:
-            # If _stop_lease_loop doesn't exist, we can't stop it, so we'll just pass
             pass
         audio_manager.terminate()
 
     return 0
 
 # === ASYNC EXAMPLE ===
-
 
 if __name__ == "__main__":
     asyncio.run(main())
