@@ -19,6 +19,12 @@ from refer import (
 from contextual_memory import create_conversation_chain, get_response
 from supabase import create_client, Client
 
+import warnings
+
+# Suppress specific warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+
 load_dotenv()
 
 app = FastAPI()
@@ -159,4 +165,4 @@ async def speech_websocket(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app)
