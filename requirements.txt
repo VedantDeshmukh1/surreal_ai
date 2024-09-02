@@ -12,5 +12,3 @@ sounddevice
 websockets
 pyht
 groq
---find-links https://github.com/intxcc/pyaudio_portaudio_binaries/releases/download/1.0.0/PyAudio-0.2.11-cp39-cp39-win_amd64.whl
-PyAudio==0.2.11
