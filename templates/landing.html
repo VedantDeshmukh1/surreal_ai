@@ -10,14 +10,16 @@
             padding: 0;
             height: 100%;
             font-family: Arial, sans-serif;
-            
+        }
+        body {
+            overflow-x: hidden; /* Prevent horizontal scrolling */
         }
         #app {
-            height: 100vh;
+            min-height: 100vh; /* Use min-height instead of height */
             width: 100%;
             display: flex;
-            justify-content: flex-end; /* Align content to the right */
-            align-items: center;
+            flex-direction: column; /* Change to column layout */
+            align-items: flex-end; /* Align content to the right */
             background-image: url('/static/Robot.png');
             background-size: cover;
             background-position: center;
@@ -48,6 +50,8 @@
             max-width: 400px; /* Reduced width */
             width: 80%; /* Adjust width for smaller screens */
             margin-right: 5%; /* Add right margin */
+            margin-top: auto; /* Push container to the bottom */
+            margin-bottom: 5%; /* Add some bottom margin */
             padding: 30px; /* Reduced padding */
             background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(20px);
@@ -88,6 +92,8 @@
             width: 100%;
             max-width: 300px; /* Reduced max-width */
             margin-bottom: 20px; /* Reduced margin */
+            justify-content: center;
+            display: flex;
         }
         input {
             width: 100%;
@@ -98,6 +104,7 @@
             background: rgba(255, 255, 255, 0.8);
             color: #333333;
             transition: all 0.3s ease;
+            
         }
         input:focus {
             outline: none;
@@ -168,7 +175,11 @@
         }
 
         .credits {
-            width: 100%;
+            width: 100%; /* Full width */
+            max-width: 100%; /* Ensure it doesn't exceed viewport width */
+            margin-left: 0;
+            margin-right: 0;
+            box-sizing: border-box; /* Include padding in width calculation */
             padding: 40px;
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(10px);
@@ -241,6 +252,11 @@
         }
 
         .technical-section {
+            width: 100%; /* Full width */
+            max-width: 100%; /* Ensure it doesn't exceed viewport width */
+            margin-left: 0;
+            margin-right: 0;
+            box-sizing: border-box; /* Include padding in width calculation */
             margin-top: 40px;
             padding: 40px;
             background: rgba(255, 255, 255, 0.8);
@@ -411,6 +427,35 @@
             .feature p {
                 font-size: 14px;
             }
+
+            .container {
+                width: 90%; /* Increase width on smaller screens */
+                margin-right: 5%;
+                margin-left: 5%;
+            }
+        }
+
+        /* Customize scrollbar for Chrome */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 53, 0.7);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 107, 53, 0.9);
+        }
+
+        /* Add smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
         }
     </style>
 </head>
