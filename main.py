@@ -1,10 +1,12 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Form, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Form, HTTPException, Depends
+from fastapi.security import APIKeyHeader
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import asyncio
 import os
+import json
 from dotenv import load_dotenv
 from refer import (
     AsyncClient,
@@ -52,11 +54,15 @@ options = TTSOptions(
     temperature=0.5
 )
 api_key =  os.getenv('GROQ_API_KEY')
-conversation = create_conversation_chain(api_key)
 audio_manager = AudioManager()
 
-class Message(BaseModel):
-    text: str
+class UserSession:
+    def __init__(self, email):
+        self.email = email
+        self.conversation = create_conversation_chain(api_key)
+        self.chat_history = []
+
+active_sessions = {}
 
 @app.on_event("startup")
 async def startup_event():
@@ -96,18 +102,33 @@ async def chat(request: Request):
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    print("WebSocket connection attempt")
     await websocket.accept()
-    print("WebSocket connection accepted")
+    user_session = None
     try:
         while True:
-            print("Waiting for message...")
             data = await websocket.receive_json()
-            print(f"Received data: {data}")
             
+            if data['type'] == 'email':
+                user_email = data['content']
+                if user_email not in active_sessions:
+                    user_session = UserSession(user_email)
+                    active_sessions[user_email] = user_session
+                    # Load existing chat history from Supabase
+                    result = supabase.table("surreal_users").select("conversation").eq("email", user_email).execute()
+                    if result.data and result.data[0]['conversation']:
+                        user_session.chat_history = json.loads(result.data[0]['conversation'])
+                        for msg in user_session.chat_history:
+                            await websocket.send_json({"type": "history", "content": msg})
+                else:
+                    user_session = active_sessions[user_email]
+                continue
+
+            if not user_session:
+                await websocket.send_json({"type": "error", "content": "Session not initialized"})
+                continue
+
             if data['type'] in ['text', 'speech']:
                 user_input = data['content']
-                print(f"User input: {user_input}")
                 if user_input.lower() == 'quit':
                     await websocket.send_json({"type": "text", "content": "Goodbye!"})
                     break
@@ -115,7 +136,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 start_time = asyncio.get_event_loop().time()
                 try:
                     print("Getting Groq response...")
-                    groq_response = await asyncio.to_thread(get_response, conversation, user_input)
+                    groq_response = await asyncio.to_thread(get_response, user_session.conversation, user_input)
                     print(f"Groq response: {groq_response}")
                     await websocket.send_json({"type": "text", "content": groq_response})
 
@@ -137,6 +158,22 @@ async def websocket_endpoint(websocket: WebSocket):
                 except Exception as e:
                     print(f"Error in WebSocket endpoint: {str(e)}")
                     await websocket.send_json({"type": "error", "content": str(e)})
+
+                # Add user message to chat history
+                user_session.chat_history.append({"role": "user", "content": user_input})
+
+                # Add assistant message to chat history
+                user_session.chat_history.append({"role": "assistant", "content": groq_response})
+
+                # Save chat history to Supabase
+                try:
+                    supabase.table("surreal_users").upsert({
+                        "email": user_session.email,
+                        "conversation": json.dumps(user_session.chat_history)
+                    }).execute()
+                except Exception as e:
+                    print(f"Error saving chat history: {str(e)}")
+
             else:
                 print(f"Unsupported message type: {data['type']}")
 
@@ -144,6 +181,9 @@ async def websocket_endpoint(websocket: WebSocket):
         print("WebSocket disconnected")
     except Exception as e:
         print(f"Unexpected error in WebSocket: {str(e)}")
+    finally:
+        if user_session:
+            del active_sessions[user_session.email]
 
 @app.websocket("/speech")
 async def speech_websocket(websocket: WebSocket):

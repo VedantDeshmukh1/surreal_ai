@@ -464,9 +464,9 @@
         <div class="container">
             <h1>Surreal AI</h1>
             <p>Experience the fastest conversational AI with human-like conversational speed.</p>
-            <form action="/submit-email" method="post">
+            <form id="emailForm" action="/submit-email" method="post">
                 <div class="input-group">
-                    <input type="email" name="email" placeholder="Enter your email" required>
+                    <input type="email" name="email" id="emailInput" placeholder="Enter your email" required>
                 </div>
                 <button type="submit">Get Started</button>
             </form>
@@ -561,6 +561,7 @@
         const app = document.getElementById('app');
         const form = document.getElementById('emailForm');
         const thankYouMessage = document.getElementById('thankYouMessage');
+        const emailInput = document.getElementById('emailInput');
         const bgGradients = [
             'linear-gradient(120deg, rgba(161, 196, 253, 0.5) 0%, rgba(194, 233, 251, 0.5) 100%)',
             'linear-gradient(120deg, rgba(246, 211, 101, 0.5) 0%, rgba(253, 160, 133, 0.5) 100%)',
@@ -588,8 +589,35 @@
 
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            form.style.display = 'none';
-            thankYouMessage.style.display = 'block';
+            const email = emailInput.value;
+            
+            // Store email in localStorage
+            localStorage.setItem('userEmail', email);
+
+            // Submit the form
+            fetch('/submit-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `email=${encodeURIComponent(email)}`
+            })
+            .then(response => {
+                if (response.ok) {
+                    form.style.display = 'none';
+                    thankYouMessage.style.display = 'block';
+                    // Redirect to chat page after a short delay
+                    setTimeout(() => {
+                        window.location.href = '/chat';
+                    }, 2000);
+                } else {
+                    throw new Error('Failed to submit email');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
         });
     </script>
 </body>

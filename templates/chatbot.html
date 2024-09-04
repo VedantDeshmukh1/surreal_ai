@@ -192,13 +192,23 @@
         let recognition;
         let audioContext, source, audioQueue = [];
         let isPlayingAudio = false;
+        let userEmail = '';
 
         function connectWebSocket() {
             console.log("Attempting to connect WebSocket");
-            ws = new WebSocket('ws://localhost:8000/ws');
+            userEmail = localStorage.getItem('userEmail');
+            
+            if (!userEmail) {
+                console.error("No user email found. Redirecting to landing page.");
+                window.location.href = '/';
+                return;
+            }
+            
+            ws = new WebSocket(`ws://localhost:8000/ws`);
             
             ws.onopen = function(event) {
                 console.log("WebSocket connection established");
+                ws.send(JSON.stringify({type: 'email', content: userEmail}));
             };
 
             ws.onmessage = handleWebSocketMessage;
@@ -212,8 +222,6 @@
                 console.error('WebSocket error:', error);
             };
         }
-
-        connectWebSocket();
 
         async function handleWebSocketMessage(event) {
             console.log("Received WebSocket message", event);
@@ -231,6 +239,9 @@
                     switch (data.type) {
                         case 'text':
                             addMessage(data.content, 'bot');
+                            break;
+                        case 'history':
+                            addMessage(data.content.content, data.content.role, true);
                             break;
                         case 'audio_end':
                             console.log('Audio playback complete');
@@ -275,16 +286,26 @@
             }
         }
 
-        function addMessage(text, sender) {
+        function addMessage(text, sender, isHistory = false) {
             const message = document.createElement('div');
             message.classList.add('message');
             if (sender === 'user') {
                 message.classList.add('user');
             }
             message.textContent = text;
+            if (isHistory) {
+                message.classList.add('history-message');
+            }
             chatArea.appendChild(message);
             chatArea.scrollTop = chatArea.scrollHeight;
             message.style.animation = 'float 3s ease-in-out infinite';
+        }
+
+        function sendMessage(content, type) {
+            addMessage(content, 'user');
+            input.value = '';
+            console.log(`Sending ${type} message:`, content);
+            ws.send(JSON.stringify({type: type, content: content}));
         }
 
         function handleSendMessage() {
@@ -300,14 +321,6 @@
             }
         }
 
-        function sendMessage(content, type) {
-            addMessage(content, 'user');
-            input.value = '';
-            console.log(`Sending ${type} message:`, content);
-            ws.send(JSON.stringify({type: type, content: content}));
-        }
-
-        // Update the speech recognition code
         function handleMicClick() {
             if (!recognition) {
                 recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
@@ -343,7 +356,6 @@
 
         micButton.addEventListener('click', handleMicClick);
 
-        // Add floating particles
         function createParticle() {
             const particle = document.createElement('div');
             particle.classList.add('particle');
@@ -358,7 +370,10 @@
 
         setInterval(createParticle, 200);
 
-        // Initial greeting
+        window.onload = function() {
+            connectWebSocket();
+        };
+
         setTimeout(() => {
             addMessage("Welcome to Surreal AI. Where reality bends and imagination transcends. How may I assist you in your journey through the extraordinary?", 'bot');
         }, 1000);
