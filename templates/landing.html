@@ -606,10 +606,8 @@
                 if (response.ok) {
                     form.style.display = 'none';
                     thankYouMessage.style.display = 'block';
-                    // Redirect to chat page after a short delay
-                    setTimeout(() => {
-                        window.location.href = '/chat';
-                    }, 2000);
+                    // Redirect to chat page immediately
+                    window.location.href = `/chat?email=${encodeURIComponent(email)}`;
                 } else {
                     throw new Error('Failed to submit email');
                 }

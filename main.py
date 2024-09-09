@@ -59,8 +59,9 @@ audio_manager = AudioManager()
 class UserSession:
     def __init__(self, email):
         self.email = email
-        self.conversation = create_conversation_chain(api_key)
+        self.conversation = None
         self.chat_history = []
+        self.role = None
 
 active_sessions = {}
 
@@ -88,7 +89,7 @@ async def submit_email(request: Request, email: str = Form(...)):
         
         if response.data:
             print(f"Email inserted successfully: {email}")
-            return RedirectResponse(url="/chat", status_code=303)
+            return RedirectResponse(url=f"/chat?email={email}", status_code=303)
         else:
             print(f"Failed to insert email: {email}")
             raise HTTPException(status_code=500, detail="Failed to submit email")
@@ -98,7 +99,37 @@ async def submit_email(request: Request, email: str = Form(...)):
 
 @app.get("/chat", response_class=HTMLResponse)
 async def chat(request: Request):
-    return templates.TemplateResponse("chatbot.html", {"request": request})
+    # Get the email from the query parameters
+    email = request.query_params.get("email")
+    
+    # If no email is provided, redirect to the landing page
+    if not email:
+        return RedirectResponse(url="/", status_code=303)
+    
+    # Check if the email exists in the database
+    result = supabase.table("surreal_users").select("email").eq("email", email).execute()
+    
+    # If the email doesn't exist in the database, redirect to the landing page
+    if not result.data:
+        return RedirectResponse(url="/", status_code=303)
+    
+    # If email exists, render the chatbot page
+    return templates.TemplateResponse("chatbot.html", {"request": request, "email": email})
+
+DEFAULT_PROMPT = """
+You are Surreal AI, acting as a {role}. Your responses should be:
+- Professional and knowledgeable in the field of {role}
+- Accurate and based on current information relevant to the {role}
+- Helpful and informative to the best of your abilities
+- Clear and easy to understand for the general public
+- Ethical and responsible within the context of your role as a {role}
+- Cautious about providing specific advice without proper context or qualifications
+
+Provide information and assistance appropriate to your role as a {role}. If asked about topics outside your expertise or role, politely redirect the conversation to areas relevant to your role as a {role}.
+
+Remember, you're providing general information and should encourage users to seek professional, in-person consultation for specific or critical matters related to your role.
+"""
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -123,6 +154,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     user_session = active_sessions[user_email]
                 continue
 
+            elif data['type'] == 'system_prompt':
+                if user_session:
+                    user_session.role = data['content']
+                    user_session.conversation = create_conversation_chain(api_key, role=user_session.role)
+                continue
+
             if not user_session:
                 await websocket.send_json({"type": "error", "content": "Session not initialized"})
                 continue
@@ -136,12 +173,33 @@ async def websocket_endpoint(websocket: WebSocket):
                 start_time = asyncio.get_event_loop().time()
                 try:
                     print("Getting Groq response...")
+                    if user_session.conversation is None:
+                        if user_session.role is None:
+                            user_session.role = "general assistant"
+                        user_session.conversation = create_conversation_chain(api_key, role=user_session.role)
+                    
                     groq_response = await asyncio.to_thread(get_response, user_session.conversation, user_input)
                     print(f"Groq response: {groq_response}")
                     await websocket.send_json({"type": "text", "content": groq_response})
 
+                    # Add user message to chat history
+                    user_session.chat_history.append({"role": "user", "content": user_input})
+
+                    # Add assistant message to chat history
+                    user_session.chat_history.append({"role": "assistant", "content": groq_response})
+
+                    # Save chat history to Supabase after each response
+                    try:
+                        supabase.table("surreal_users").upsert({
+                            "email": user_session.email,
+                            "conversation": json.dumps(user_session.chat_history)
+                        }).execute()
+                        print("Chat history saved to Supabase")
+                    except Exception as e:
+                        print(f"Error saving chat history: {str(e)}")
+
                     print("Converting text to speech...")
-                    audio_data = client.tts(groq_response, options)
+                    audio_data = await asyncio.to_thread(client.tts, groq_response, options)
                     
                     first_audio_byte_time = None
                     async for chunk in async_play_audio(audio_data):
@@ -156,23 +214,10 @@ async def websocket_endpoint(websocket: WebSocket):
                     end_time = asyncio.get_event_loop().time()
                     await websocket.send_json({"type": "info", "content": f"Total response time: {end_time - start_time:.2f} seconds"})
                 except Exception as e:
-                    print(f"Error in WebSocket endpoint: {str(e)}")
-                    await websocket.send_json({"type": "error", "content": str(e)})
-
-                # Add user message to chat history
-                user_session.chat_history.append({"role": "user", "content": user_input})
-
-                # Add assistant message to chat history
-                user_session.chat_history.append({"role": "assistant", "content": groq_response})
-
-                # Save chat history to Supabase
-                try:
-                    supabase.table("surreal_users").upsert({
-                        "email": user_session.email,
-                        "conversation": json.dumps(user_session.chat_history)
-                    }).execute()
-                except Exception as e:
-                    print(f"Error saving chat history: {str(e)}")
+                    error_message = f"Error in processing response: {str(e)}"
+                    print(error_message)
+                    await websocket.send_json({"type": "error", "content": error_message})
+                    continue  # Skip the rest of the loop and start over
 
             else:
                 print(f"Unsupported message type: {data['type']}")

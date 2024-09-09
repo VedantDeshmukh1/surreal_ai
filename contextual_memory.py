@@ -1,36 +1,35 @@
 import os
 from langchain.chains import LLMChain
-from langchain_core.prompts import (
-    ChatPromptTemplate,
-    HumanMessagePromptTemplate,
-    MessagesPlaceholder,
-)
+from langchain_core.prompts import PromptTemplate
 from langchain_core.messages import SystemMessage
-from langchain.chains.conversation.memory import ConversationBufferWindowMemory
+from langchain.memory import ConversationBufferMemory
 from langchain_groq import ChatGroq
 
-def create_conversation_chain(api_key, model_name="llama3-8b-8192", memory_length=5):
-    groq_chat = ChatGroq(
-        groq_api_key=api_key,
-        model_name=model_name
-    )
+def generate_system_prompt(role):
+    return f"""You are an AI assistant specialized in the role of {role}.Stick to the {role} role and do not deviate from it dont be imaginative. Your task is to provide accurate and helpful information related to this role, answering questions to the best of your capabilities. Always stay in character and provide responses that are consistent with your expertise in {role}. If a question falls outside your area of expertise, politely explain that it's beyond your specialized knowledge, but try to offer relevant information or suggest where the user might find an answer."""
 
-    system_prompt = 'You are a helpful assistant. Provide concise responses without any formatting.'
-    memory = ConversationBufferWindowMemory(k=memory_length, memory_key="chat_history", return_messages=True)
-
-    prompt = ChatPromptTemplate.from_messages([
-        SystemMessage(content=system_prompt),
-        MessagesPlaceholder(variable_name="chat_history"),
-        HumanMessagePromptTemplate.from_template("{human_input}")
-    ])
-
+def create_conversation_chain(api_key, role=None):
+    llm = ChatGroq(temperature=0.7, api_key=api_key)
+    memory = ConversationBufferMemory(return_messages=True)
+    
+    system_prompt = generate_system_prompt(role) if role else ""
+    print(system_prompt)
+    if system_prompt:
+        memory.chat_memory.add_message(SystemMessage(content=system_prompt))
+    
+    template = """
+    {history}
+    Human: {human_input}
+    AI: """
+    
+    prompt = PromptTemplate(input_variables=["history", "human_input"], template=template)
+    
     conversation = LLMChain(
-        llm=groq_chat,
+        llm=llm,
         prompt=prompt,
-        verbose=False,
         memory=memory,
+        verbose=True
     )
-
     return conversation
 
 def get_response(conversation, user_input):
