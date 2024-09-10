@@ -1,5 +1,4 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Form, HTTPException, Depends
-from fastapi.security import APIKeyHeader
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -13,15 +12,13 @@ from refer import (
     TTSOptions,
     api_pb2,
     get_groq_response,
-    async_play_audio,
-    AudioManager,
-    async_get_speech_input,
     initialize_apis
 )
 from contextual_memory import create_conversation_chain, get_response
 from supabase import create_client, Client
 
 import warnings
+import traceback
 
 # Suppress specific warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -46,15 +43,14 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 client = AsyncClient(os.getenv('PLAY_HT_USER_ID'), os.getenv('PLAY_HT_API_KEY'))
 options = TTSOptions(
     voice="s3://voice-cloning-zero-shot/e5df2eb3-5153-40fa-9f6e-6e27bbb7a38e/original/manifest.json",
-    format=api_pb2.FORMAT_WAV,
+    format=api_pb2.FORMAT_MP3,  # Changed to MP3
     quality="standard",
     speed=0.8,
     sample_rate=24000,
     voice_guidance=0.5,
     temperature=0.5
 )
-api_key =  os.getenv('GROQ_API_KEY')
-audio_manager = AudioManager()
+api_key = os.getenv('GROQ_API_KEY')
 
 class UserSession:
     def __init__(self, email):
@@ -75,7 +71,6 @@ async def shutdown_event():
         await client.close()
     except AttributeError:
         pass
-    audio_manager.terminate()
 
 @app.get("/", response_class=HTMLResponse)
 async def get(request: Request):
@@ -84,7 +79,6 @@ async def get(request: Request):
 @app.post("/submit-email")
 async def submit_email(request: Request, email: str = Form(...)):
     try:
-        # Insert email into Supabase table
         response = supabase.table("surreal_users").insert({"email": str(email)}).execute()
         
         if response.data:
@@ -99,45 +93,29 @@ async def submit_email(request: Request, email: str = Form(...)):
 
 @app.get("/chat", response_class=HTMLResponse)
 async def chat(request: Request):
-    # Get the email from the query parameters
     email = request.query_params.get("email")
     
-    # If no email is provided, redirect to the landing page
     if not email:
         return RedirectResponse(url="/", status_code=303)
     
-    # Check if the email exists in the database
     result = supabase.table("surreal_users").select("email").eq("email", email).execute()
     
-    # If the email doesn't exist in the database, redirect to the landing page
     if not result.data:
         return RedirectResponse(url="/", status_code=303)
     
-    # If email exists, render the chatbot page
     return templates.TemplateResponse("chatbot.html", {"request": request, "email": email})
 
-DEFAULT_PROMPT = """
-You are Surreal AI, acting as a {role}. Your responses should be:
-- Professional and knowledgeable in the field of {role}
-- Accurate and based on current information relevant to the {role}
-- Helpful and informative to the best of your abilities
-- Clear and easy to understand for the general public
-- Ethical and responsible within the context of your role as a {role}
-- Cautious about providing specific advice without proper context or qualifications
-
-Provide information and assistance appropriate to your role as a {role}. If asked about topics outside your expertise or role, politely redirect the conversation to areas relevant to your role as a {role}.
-
-Remember, you're providing general information and should encourage users to seek professional, in-person consultation for specific or critical matters related to your role.
-"""
-
-
-@app.websocket("/ws")
+@app.websocket("/wss")
 async def websocket_endpoint(websocket: WebSocket):
+    print("WebSocket connection attempt")
     await websocket.accept()
+    print("WebSocket connection accepted")
     user_session = None
     try:
         while True:
+            print("Waiting for message...")
             data = await websocket.receive_json()
+            print(f"Received data: {data}")
             
             if data['type'] == 'email':
                 user_email = data['content']
@@ -157,7 +135,9 @@ async def websocket_endpoint(websocket: WebSocket):
             elif data['type'] == 'system_prompt':
                 if user_session:
                     user_session.role = data['content']
-                    user_session.conversation = create_conversation_chain(api_key, role=user_session.role)
+                    user_session.conversation = create_conversation_chain(api_key)
+                    # Add the role as the first message in the conversation
+                    user_session.chat_history.append({"role": "system", "content": user_session.role})
                 continue
 
             if not user_session:
@@ -174,11 +154,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 try:
                     print("Getting Groq response...")
                     if user_session.conversation is None:
-                        if user_session.role is None:
-                            user_session.role = "general assistant"
-                        user_session.conversation = create_conversation_chain(api_key, role=user_session.role)
+                        user_session.conversation = create_conversation_chain(api_key)
+                        if user_session.role:
+                            user_session.chat_history.append({"role": "system", "content": user_session.role})
                     
-                    groq_response = await asyncio.to_thread(get_response, user_session.conversation, user_input)
+                    # Include the role in the conversation context
+                    context = f"You are a {user_session.role}. " if user_session.role else ""
+                    context += user_input
+                    
+                    groq_response = await asyncio.to_thread(get_response, user_session.conversation, context)
                     print(f"Groq response: {groq_response}")
                     await websocket.send_json({"type": "text", "content": groq_response})
 
@@ -199,26 +183,28 @@ async def websocket_endpoint(websocket: WebSocket):
                         print(f"Error saving chat history: {str(e)}")
 
                     print("Converting text to speech...")
-                    audio_data = await asyncio.to_thread(client.tts, groq_response, options)
+                    audio_data = client.tts(groq_response, options)
                     
-                    first_audio_byte_time = None
-                    async for chunk in async_play_audio(audio_data):
-                        if first_audio_byte_time is None:
-                            first_audio_byte_time = asyncio.get_event_loop().time()
-                            latency = first_audio_byte_time - start_time
-                            await websocket.send_json({"type": "info", "content": f"Latency: {latency:.2f} seconds"})
-                        await websocket.send_bytes(chunk)
+                    # Send audio data in larger chunks
+                    buffer = bytearray()
+                    async for chunk in audio_data:
+                        buffer.extend(chunk)
+                        if len(buffer) >= 16384:  # Send in 16KB chunks
+                            await websocket.send_bytes(buffer)
+                            buffer = bytearray()
+                    
+                    if buffer:  # Send any remaining data
+                        await websocket.send_bytes(buffer)
                     
                     await websocket.send_json({"type": "audio_end"})
 
                     end_time = asyncio.get_event_loop().time()
                     await websocket.send_json({"type": "info", "content": f"Total response time: {end_time - start_time:.2f} seconds"})
                 except Exception as e:
-                    error_message = f"Error in processing response: {str(e)}"
+                    error_message = f"Error in WebSocket endpoint: {str(e)}"
                     print(error_message)
+                    traceback.print_exc()
                     await websocket.send_json({"type": "error", "content": error_message})
-                    continue  # Skip the rest of the loop and start over
-
             else:
                 print(f"Unsupported message type: {data['type']}")
 
@@ -226,33 +212,11 @@ async def websocket_endpoint(websocket: WebSocket):
         print("WebSocket disconnected")
     except Exception as e:
         print(f"Unexpected error in WebSocket: {str(e)}")
+        traceback.print_exc()
     finally:
         if user_session:
             del active_sessions[user_session.email]
 
-@app.websocket("/speech")
-async def speech_websocket(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_json()
-            if data['action'] == 'start_listening':
-                await websocket.send_json({"type": "info", "content": "Listening... (Speak your question)"})
-                transcript = await async_get_speech_input()
-                
-                if transcript is None:
-                    await websocket.send_json({"type": "error", "content": "No speech detected. Please try again."})
-                    continue
-                
-                if transcript.lower() == 'quit':
-                    await websocket.send_json({"type": "text", "content": "Goodbye!"})
-                    break
-
-                await websocket.send_json({"type": "text", "content": f"You said: {transcript}"})
-
-    except WebSocketDisconnect:
-        print("WebSocket disconnected")
-
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

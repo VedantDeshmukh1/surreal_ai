@@ -240,12 +240,12 @@
             <h1>Surreal AI</h1>
         </div>
         <div id="role-selection">
-            <h2>Surreal AI as a...</h2>
+            <h2>Choose a role for Surreal AI</h2>
             <div id="role-options">
-                <button class="role-btn">Cosmic Guide</button>
-                <button class="role-btn">Dream Interpreter</button>
-                <button class="role-btn">Reality Bender</button>
-                <button class="role-btn">Surrealist Muse</button>
+                <button class="role-btn">Personal Assistant</button>
+                <button class="role-btn">Companion</button>
+                <button class="role-btn">Tutor</button>
+                <button class="role-btn">Career Advisor</button>
             </div>
             <input id="custom-role" type="text" placeholder="Or define your own role...">
             <button id="confirm-role">Confirm</button>
@@ -263,18 +263,18 @@
         const input = document.getElementById('input');
         const micButton = document.getElementById('mic-button');
         const container = document.getElementById('container');
+        const roleSelection = document.getElementById('role-selection');
+        const roleOptions = document.getElementById('role-options');
+        const customRole = document.getElementById('custom-role');
+        const confirmRole = document.getElementById('confirm-role');
 
         let isListening = false;
         let ws;
         let recognition;
         let audioContext, source, audioQueue = [];
         let isPlayingAudio = false;
-        let userEmail = '';
         let userRole = '';
-        const roleSelection = document.getElementById('role-selection');
-        const roleOptions = document.getElementById('role-options');
-        const customRole = document.getElementById('custom-role');
-        const confirmRole = document.getElementById('confirm-role');
+        let userEmail = '';
 
         function connectWebSocket() {
             console.log("Attempting to connect WebSocket");
@@ -286,7 +286,7 @@
                 return;
             }
             
-            ws = new WebSocket(`ws://localhost:8000/ws`);
+            ws = new WebSocket(`wss://surrealai.in/wss`);
             
             ws.onopen = function(event) {
                 console.log("WebSocket connection established");
@@ -421,6 +421,22 @@
 
                 recognition.onerror = function(event) {
                     console.error('Speech recognition error', event.error);
+                    switch(event.error) {
+                        case 'network':
+                            addMessage("Network error. Please check your internet connection and try again.", 'bot');
+                            break;
+                        case 'not-allowed':
+                        case 'service-not-allowed':
+                            addMessage("Microphone access denied. Please enable microphone access and try again.", 'bot');
+                            break;
+                        default:
+                            addMessage("Speech recognition error. Please try again or type your message.", 'bot');
+                    }
+                    stopListening();
+                };
+
+                recognition.onend = function() {
+                    stopListening();
                 };
             }
 
@@ -472,6 +488,8 @@
             if (e.target.classList.contains('role-btn')) {
                 userRole = e.target.textContent;
                 customRole.value = '';
+                setUserRole(userRole);
+                hideRoleSelection();
             }
         });
 
@@ -488,14 +506,21 @@
         });
 
         function setUserRole(role) {
-            const systemPrompt = `You are Surreal AI, acting as a ${role}. Your responses should be imaginative, thought-provoking, and align with this role throughout the conversation.`;
+            const systemPrompt = `You are an AI assistant acting as a ${role}. Provide helpful and accurate information related to this role. If a question is beyond your expertise, politely explain and offer relevant information if possible.`;
             ws.send(JSON.stringify({type: 'system_prompt', content: systemPrompt}));
-            addMessage(`Welcome! I am Surreal AI, your ${role}. How may I guide you through the realms of the extraordinary?`, 'bot');
+            addMessage(`Hello! I'm your ${role}. How can I assist you today?`, 'bot');
         }
 
         window.onload = function() {
-            connectWebSocket();
-            showRoleSelection();
+            userEmail = new URLSearchParams(window.location.search).get('email');
+            if (userEmail) {
+                localStorage.setItem('userEmail', userEmail);
+                connectWebSocket();
+                showRoleSelection();
+            } else {
+                console.error("No email provided. Redirecting to landing page.");
+                window.location.href = '/';
+            }
         };
     </script>
 </body>
