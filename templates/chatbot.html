@@ -232,6 +232,44 @@
         #confirm-role:hover {
             transform: scale(1.05);
         }
+
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(10, 10, 46, 0.9), rgba(30, 30, 91, 0.9), rgba(42, 42, 127, 0.9));
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-text {
+            font-size: 24px;
+            font-weight: 600;
+            color: #f3ec78;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(243, 236, 120, 0.5);
+        }
+
+        .loading-dots {
+            font-size: 36px;
+            color: #af4261;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -250,6 +288,12 @@
             <input id="custom-role" type="text" placeholder="Or define your own role...">
             <button id="confirm-role">Confirm</button>
         </div>
+        <div id="loading-container" class="loading-container">
+            <div class="loading-content">
+                <div class="loading-text">Connecting to Surreal AI server</div>
+                <div class="loading-dots">...</div>
+            </div>
+        </div>
         <div id="chat-area"></div>
         <div id="input-area">
             <input id="input" type="text" placeholder="Type your message here...">
@@ -267,6 +311,8 @@
         const roleOptions = document.getElementById('role-options');
         const customRole = document.getElementById('custom-role');
         const confirmRole = document.getElementById('confirm-role');
+        const loadingContainer = document.getElementById('loading-container');
+        const loadingDots = document.querySelector('.loading-dots');
 
         let isListening = false;
         let ws;
@@ -275,6 +321,17 @@
         let isPlayingAudio = false;
         let userRole = '';
         let userEmail = '';
+
+        // Function to animate loading dots
+        function animateLoadingDots() {
+            let dots = '';
+            return setInterval(() => {
+                dots = dots.length < 3 ? dots + '.' : '';
+                loadingDots.textContent = dots.padEnd(3, ' ');
+            }, 500);
+        }
+
+        let loadingInterval = animateLoadingDots();
 
         function connectWebSocket() {
             console.log("Attempting to connect WebSocket");
@@ -290,6 +347,8 @@
             
             ws.onopen = function(event) {
                 console.log("WebSocket connection established");
+                loadingContainer.style.display = 'none';
+                clearInterval(loadingInterval);
                 ws.send(JSON.stringify({type: 'email', content: userEmail}));
             };
 
@@ -302,6 +361,8 @@
 
             ws.onerror = function(error) {
                 console.error('WebSocket error:', error);
+                loadingDots.textContent = 'Connection failed. Please refresh.';
+                loadingDots.classList.add('error');
             };
         }
 
@@ -374,9 +435,7 @@
             messageContainer.style.overflow = 'hidden';
 
             const message = document.createElement('div');
-            message.classList.add('message');
-            message.classList.add(sender);
-            message.textContent = text;
+            message.classList.add('message', sender);
             if (isHistory) {
                 message.classList.add('history-message');
             }
@@ -385,6 +444,19 @@
             chatArea.appendChild(messageContainer);
             chatArea.scrollTop = chatArea.scrollHeight;
             message.style.animation = 'float 3s ease-in-out infinite';
+
+            // Animate text appearance
+            const words = text.split(' ');
+            let i = 0;
+            const animateText = () => {
+                if (i < words.length) {
+                    message.textContent += words[i] + ' ';
+                    i++;
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                    setTimeout(animateText, 50 + Math.random() * 50); // Randomize delay for more natural effect
+                }
+            };
+            animateText();
         }
 
         function sendMessage(content, type) {
